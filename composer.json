@@ -1,0 +1,23 @@
+{
+    "name": "ichiriac/expressive",
+    "description": "Expressive PHP framework - stop run batches and start a true webapp",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ioan CHIRIAC",
+            "email": "i.chiriac@yahoo.com"
+        }
+    ],
+    "minimum-stability": "beta",
+    "require": {
+      "php": ">=5.4.0",
+      "evenement/evenement": "2.0.*",
+      "react/stream": "0.4.*",
+      "react/event-loop": "0.4.*"
+    },
+    "autoload": {
+        "psr-0": {
+            "expressive": "src/"
+        }
+    }
+}
