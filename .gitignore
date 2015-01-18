@@ -1,3 +1,4 @@
 /vendor/
 /composer.lock
 /examples/hello-world/*.txt
+/benchmark/*.txt

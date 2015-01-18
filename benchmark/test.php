@@ -4,7 +4,7 @@
    * This sample is a basic http server under a cluster of 8 child processes
    */
 
-  require_once(__DIR__ . '/../../vendor/autoload.php');
+  require_once(__DIR__ . '/../vendor/autoload.php');
 
   $loop = React\EventLoop\Factory::create();
   $cluster = new Expressive\Cluster($loop, 1337, '127.0.0.1');
