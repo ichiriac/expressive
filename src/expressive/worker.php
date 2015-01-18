@@ -78,7 +78,7 @@ namespace expressive {
         // does not work on windows : http://php.net/manual/fr/function.stream-set-blocking.php#110997
         $this->stdout = new Stream($this->pipes[1], cluster::$loop);
         stream_set_blocking($this->pipes[1], 0);
-        $this->stderr->on('data', function($data) {
+        $this->stdout->on('data', function($data) {
           $this->emit('debug', array($data));
         });
         $this->stderr = new Stream($this->pipes[2], cluster::$loop);
