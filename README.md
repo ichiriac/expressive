@@ -30,3 +30,9 @@ Sample code :
 
   $loop->run();
 ```
+
+You can run multiple clusters in the same application (see `examples/multi`)
+
+# License
+
+Under MIT - author Ioan CHIRIAC
