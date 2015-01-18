@@ -16,40 +16,35 @@ namespace Expressive\Http {
    */
   class Server extends \React\Http\Server {
     private $io;
+    private $parser;
 
     public function __construct(SocketServerInterface $io)
     {
         $this->io = $io;
         $this->io->on('connection', function (ConnectionInterface $conn) {
-            // TODO: http 1.1 keep-alive
-            // TODO: chunked transfer encoding (also for outgoing data)
-            // TODO: multipart parsing
-            $parser = new RequestHeaderParser();
-            $parser->on('headers', function (Request $request, $bodyBuffer) use ($conn, $parser) {
-                // attach remote ip to the request as metadata
-                $request->remoteAddress = $conn->getRemoteAddress();
-                $this->handleRequest($conn, $request, $bodyBuffer);
-                $conn->on('end', function () use ($request) {
-                    $request->emit('end');
-                });
-                $conn->on('data', function ($data) use ($request) {
-                    $request->emit('data', array($data));
-                });
-                $request->on('pause', function () use ($conn) {
-                    $conn->emit('pause');
-                });
-                $request->on('resume', function () use ($conn) {
-                    $conn->emit('resume');
-                });
+          $parser = new RequestHeaderParser();
+          $parser->on('headers', function (Request $request, $bodyBuffer) use ($conn, $parser) {
+            $request->remoteAddress = '0.0.0.0'; // proxy / not reliable
+            $response = $this->handleRequest($conn, $request, $bodyBuffer);
+            $response->on('close', function() use($conn, $parser) {
+              $parser->flush();
+              $conn->removeAllListeners();
+              $conn->on('data', array($parser, 'feed'));
             });
-            $conn->on('data', array($parser, 'feed'));
+            $this->emit('request', array($request, $response));
+            $request->emit('data', array($bodyBuffer));
+          });
+          $conn->on('data', array($parser, 'feed'));
         });
     }
+    /**
+     * Creates the response handler
+     */
     public function handleRequest(ConnectionInterface $conn, Request $request, $bodyBuffer)
     {
         $response = new Response($conn);
-        $this->emit('request', array($request, $response));
-        $request->emit('data', array($bodyBuffer));
+        $response->on('close', array($request, 'close'));
+        return $response;
     }
 
     /**

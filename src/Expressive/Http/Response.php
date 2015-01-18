@@ -55,6 +55,9 @@ namespace Expressive\Http {
     {
       $this->conn->write(SOCK_TOKEN_CLOSE);
       $this->emit('close');
+      $this->removeAllListeners();
+      $this->close = true;
+      $this->writable = false;
     }
   }
 }

@@ -14,19 +14,37 @@ namespace Expressive\Http {
 
     private $buffer = '';
     private $maxSize = 4096;
+    private $request;
 
-    public function feed($data)
-    {
+    /**
+     * Receiving data
+     */
+    public function feed($data) {
+      if ($this->request) {
+        $this->request->emit('data', array($data));
+      } else {
         if (strlen($this->buffer) + strlen($data) > $this->maxSize) {
-            $this->emit('error', array(new \OverflowException("Maximum header size of {$this->maxSize} exceeded."), $this));
-            return;
+          $this->emit('error', array(new \OverflowException("Maximum header size of {$this->maxSize} exceeded."), $this));
+          return;
         }
         $this->buffer .= $data;
         if (false !== strpos($this->buffer, "\r\n\r\n")) {
-            list($request, $bodyBuffer) = $this->parseRequest($this->buffer);
-            $this->buffer = '';
-            $this->emit('headers', array($request, $bodyBuffer));
+          list($this->request, $bodyBuffer) = $this->parseRequest($this->buffer);
+          $this->emit('headers', array($this->request, $bodyBuffer));
         }
+      }
+    }
+
+    /**
+     * Flushing the current buffer
+     */
+    public function flush() {
+      $this->buffer = '';
+      if ($this->request) {
+        $this->request->emit('end');
+        $this->request->removeAllListeners();
+        $this->request = null;
+      }
     }
   }
 }
