@@ -85,7 +85,7 @@ namespace Expressive {
         $path = dirname($_SERVER['SCRIPT_FILENAME']);
         $io = array(
            0 => array('pipe', 'r'),
-           1 => array('file', $path . '/debug.txt', 'a+'),
+           1 => array('file', $path . '/debug.txt', 'w'),
            2 => array('file', $path . '/error.txt', 'a+'),
         );
         $cmd .= ' ' . $this->port;
@@ -154,11 +154,14 @@ namespace Expressive {
         $this->socket = new Stream($this->socket, $this->cluster->loop);
 
         // handling the worker response
-        $this->socket->on('data', function($data) {
-          if (substr($data, -strlen(SOCK_TOKEN_CLOSE)) === SOCK_TOKEN_CLOSE) {
-            $this->pipe->end(substr($data, 0, strlen($data) - strlen(SOCK_TOKEN_CLOSE)));
-          } else {
-            $this->pipe->write($data);
+        $tokenSize = strlen(SOCK_TOKEN_CLOSE);
+        $this->socket->on('data', function($data) use($tokenSize) {
+          if ($this->pipe) {
+            if (substr($data, -$tokenSize) === SOCK_TOKEN_CLOSE) {
+              $this->pipe->end(substr($data, 0, strlen($data) - $tokenSize));
+            } else {
+              $this->pipe->write($data);
+            }
           }
         });
 
