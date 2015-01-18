@@ -68,6 +68,9 @@ Then bootstrap you app as following :
   $loop->run();
 ```
 
+Read the wiki for more informations about the API :
+https://github.com/ichiriac/expressive/wiki
+
 ## Tips for production
 
 ### 1. Monitor and keep alive
