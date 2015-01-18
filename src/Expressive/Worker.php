@@ -130,7 +130,7 @@ namespace Expressive {
     }
 
     /**
-     * Pipe the worker process with the specified socket
+     * Pipe the worker process with the specified socket (USED ON WINDOWS MODE ONLY)
      * @return boolean Returns true if the incomming socket was accepted
      */
     public function pipe($socket) {
