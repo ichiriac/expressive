@@ -29,7 +29,6 @@ namespace Expressive\Http {
                 // attach remote ip to the request as metadata
                 $request->remoteAddress = $conn->getRemoteAddress();
                 $this->handleRequest($conn, $request, $bodyBuffer);
-                $conn->removeListener('data', array($parser, 'feed'));
                 $conn->on('end', function () use ($request) {
                     $request->emit('end');
                 });
