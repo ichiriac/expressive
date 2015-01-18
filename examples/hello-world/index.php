@@ -16,6 +16,8 @@
     $cluster->on('exit', function($worker, $code, $signal) use($cluster) {
       echo "worker $worker->pid died with code $code \n";
     });
+
+    echo "Server is ready to serve at http://127.0.0.1:1337/\n";
   } else {
     $i = 0;
     $cluster->on('request', function($req, $res) use($i) {
