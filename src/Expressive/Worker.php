@@ -91,7 +91,7 @@ namespace Expressive {
         $cmd .= ' ' . $this->port;
       } else {
         $io = array(
-           0 => cluster::$socket,
+           0 => $cluster->socket,
            1 => array('pipe', 'w'),
            2 => array('pipe', 'w'),
         );
