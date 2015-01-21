@@ -1,40 +1,71 @@
 <?php
 /**
- * Expressive - reactphp cluster implementation
+ * Expressive - cluster implementation
  * @author Ioan CHIRIAC
  * @license MIT
  */
 namespace Expressive\Http {
 
-  use React\Socket\ConnectionInterface;
+  define('HTTP_CHUNKED_ENCODING', "0\r\n\r\n");
 
   /**
-   * This class is used only on windows mode, for performance reasons
-   * avoid to close the socket and make it persistent
+   * This class handles responses
    */
-  class Response extends \React\Http\Response {
+  class Response {
 
-    private $conn;
-    private $chunkedEncoding = true;
+    protected $headers;
+    protected $status;
+    protected $cookies = array();
+    protected $headers_sent = false;
+    protected $request;
+    protected $chunkedEncoding = true;
 
-    /**
-     * Overwrite constructor
-     */
-    public function __construct(ConnectionInterface $conn)
+    public function __construct(Request $request)
     {
-      parent::__construct($conn);
-      $this->conn = $conn;
-      $this->on('end', array($this, 'close'));
+      $this->request = $request;
+      $this->headers = array('X-Powered-By'=> 'Expressive');
     }
     /**
      * Intercept chunkedEncoding
      */
-    public function writeHead($status = 200, array $headers = array())
+    public function writeHead($status = null, array $headers = array())
     {
-      if (isset($headers['Content-Length'])) {
-          $this->chunkedEncoding = false;
+      if ($this->headers_sent) {
+        throw new \Exception(
+          'Headers already sent !'
+        );
       }
-      return parent::writeHead($status, $headers);
+      if (is_array($status)) {
+        $headers = $status;
+        $status = null;
+      }
+      if (!empty($headers)) {
+        $this->headers = array_merge(
+          $this->headers, $headers
+        );
+      }
+      $this->chunkedEncoding = empty($this->headers['Content-Length']);
+      if ($this->chunkedEncoding) {
+        $this->headers['Transfer-Encoding'] = 'chunked';
+      }
+      if (!empty($status)) $this->status = $status;
+    }
+
+    public function write($data) {
+      if (!$this->headers_sent) {
+        $this->headers_sent = true;
+        $status = (int) $this->status;
+        $text = isset(ResponseCodes::$statusTexts[$status]) ? ResponseCodes::$statusTexts[$status] : '';
+        $header = "HTTP/1.1 $status $text\r\n";
+        foreach($this->headers as $name => $value) {
+          $name = strtr($name, "\r\n", '');
+          $value = strtr($value, "\r\n", '');
+          $header .= "$name: $value\r\n";
+        }
+        $data = $header . "\r\n" . $data;
+      }
+      $this->request->socket->write($data);
+      return $this;
     }
     /**
      * Sends the ending message
@@ -44,20 +75,16 @@ namespace Expressive\Http {
         $this->write($data);
       }
       if ($this->chunkedEncoding) {
-        $this->conn->write("0\r\n\r\n");
+        $this->request->socket->write(HTTP_CHUNKED_ENCODING);
       }
-      $this->emit('end');
+      $this->close();
     }
     /**
      * Requests to close the connection
      */
     public function close()
     {
-      $this->conn->write(SOCK_TOKEN_CLOSE);
-      $this->emit('close');
-      $this->removeAllListeners();
-      $this->close = true;
-      $this->writable = false;
+      $this->request->close();
     }
   }
 }
